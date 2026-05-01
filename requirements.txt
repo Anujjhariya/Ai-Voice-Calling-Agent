@@ -1,0 +1,28 @@
+# ── Web Framework & Server ──
+fastapi
+uvicorn[standard]
+
+# ── WebSocket (Murf TTS streaming) ──
+websockets
+
+# ── Twilio (outbound calls) ──
+twilio
+
+# ── Groq (STT Whisper + LLM Llama) ──
+groq
+
+# ── Google Calendar API ──
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+
+# ── TTS audio conversion ──
+imageio-ffmpeg
+
+# ── Environment variables ──
+python-dotenv
+
+# ── HTTP requests (outbound Exotel) ──
+requests
+httpx

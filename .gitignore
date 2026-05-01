@@ -1,0 +1,25 @@
+# ── Environment & Secrets ──
+.env
+credentials.json
+token.json
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# ── IDE ──
+.vscode/
+.idea/
+
+# ── OS files ──
+Thumbs.db
+.DS_Store
+
+# ── Temp/test files ──
+*.wav
+*.mp3
+test_output.*
