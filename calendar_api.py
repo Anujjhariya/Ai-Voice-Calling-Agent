@@ -60,6 +60,35 @@ def book_meeting(name: str, dt_str: str) -> str:
     except Exception as e:
         return f"Sorry, I could not book the meeting. Error: {str(e)}"
 
+def get_busy_slots() -> str:
+    """Fetch the next 10 upcoming events from the calendar to know busy slots."""
+    try:
+        service = get_calendar_service()
+        now = datetime.utcnow().isoformat() + 'Z'  # UTC time
+        
+        events_result = service.events().list(
+            calendarId='primary', timeMin=now,
+            maxResults=15, singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        
+        events = events_result.get('items', [])
+        if not events:
+            return "Calendar is completely free."
+            
+        busy_strings = []
+        for event in events:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            # Python's fromisoformat handles the timezone info returned by Google API
+            dt = datetime.fromisoformat(start)
+            busy_strings.append(dt.strftime('%A, %Y-%m-%d at %I:%M %p'))
+            
+        return "The following time slots are ALREADY BOOKED/BUSY (DO NOT suggest these):\n- " + "\n- ".join(busy_strings)
+        
+    except Exception as e:
+        print(f"Calendar fetch error: {e}")
+        return "Calendar is free."
+
 
 if __name__ == "__main__":
     # Run this once to authorize Google Calendar access

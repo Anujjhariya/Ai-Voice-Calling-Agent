@@ -197,19 +197,51 @@ import tempfile
 import wave
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from dotenv import load_dotenv
-from llm import get_response
+from llm import get_response, summarize_call
+from db import save_call_data
 from lang_detect import detect_language
 from stt import transcribe_audio
 from tts import generate_pcm, generate_pcm_stream
 from calendar_api import book_meeting
+import httpx
+
+async def download_twilio_recording(call_sid: str):
+    """Wait for Twilio to process the recording, then download the WAV file."""
+    await asyncio.sleep(15)  # Wait 15s to ensure Twilio finishes processing
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    
+    if not os.path.exists("recordings"):
+        os.makedirs("recordings")
+        
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Calls/{call_sid}/Recordings.json"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, auth=(account_sid, auth_token))
+            if response.status_code == 200:
+                data = response.json()
+                recordings = data.get("recordings", [])
+                if recordings:
+                    recording_sid = recordings[0]["sid"]
+                    wav_url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Recordings/{recording_sid}.wav"
+                    
+                    wav_response = await client.get(wav_url, auth=(account_sid, auth_token))
+                    if wav_response.status_code == 200:
+                        file_path = f"recordings/{call_sid}.wav"
+                        with open(file_path, "wb") as f:
+                            f.write(wav_response.content)
+                        print(f"\n✅ Recording downloaded and saved to: {file_path}")
+    except Exception as e:
+        print(f"\n❌ Failed to download recording: {e}")
 
 load_dotenv()
 app = FastAPI()
 call_history = {}
 
-RECORD_SECONDS    = 7
+RECORD_SECONDS    = 15
 CHUNK_MS          = 20
-CHUNKS_TO_COLLECT = int((RECORD_SECONDS * 1000) / CHUNK_MS)  # 350 chunks
+CHUNKS_TO_COLLECT = int((RECORD_SECONDS * 1000) / CHUNK_MS)  # 750 chunks
 
 # ── Pre-cached greeting audio (generated once at startup) ──
 GREETING_TEXT = (
@@ -392,10 +424,23 @@ async def voicebot_ws(websocket: WebSocket):
                         history.append({"role": "assistant", "content": reply_text})
                         call_history[call_sid] = history[-10:]
                         
+                        import time
+                        start_time = time.time()
                         reply_audio_len = await say(websocket, speak_text, stream_sid)
+                        elapsed = time.time() - start_time
                         
-                        duration = (reply_audio_len / 8000.0) + 0.5 if reply_audio_len else 3.0
-                        asyncio.create_task(begin_listening(duration))
+                        # Calculate exact remaining playback time
+                        audio_duration = (reply_audio_len / 8000.0) if reply_audio_len else 3.0
+                        sleep_duration = max(0.2, audio_duration - elapsed + 0.2)
+                        
+                        print(f"⏱️ Audio length: {audio_duration:.1f}s | Gen time: {elapsed:.1f}s | Sleep: {sleep_duration:.1f}s")
+                        
+                        if "BOOK_MEETING:" in reply_text:
+                            print("👋 Meeting booked! Waiting for audio to finish, then hanging up...")
+                            await asyncio.sleep(sleep_duration + 0.5)
+                            break
+                        else:
+                            asyncio.create_task(begin_listening(sleep_duration))
                     else:
                         print("🔕 No speech detected (empty transcription)")
                         asyncio.create_task(begin_listening(0.5))
@@ -404,7 +449,7 @@ async def voicebot_ws(websocket: WebSocket):
                 print(f"\n📴 Call ended")
                 break
 
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
         print(f"\n📴 Disconnected")
     except Exception as e:
         print(f"\n❌ {e}")
@@ -412,6 +457,26 @@ async def voicebot_ws(websocket: WebSocket):
         traceback.print_exc()
     finally:
         print(f"🔚 Done: {call_sid}")
+        
+        # Save call data to database
+        history = call_history.get(call_sid, [])
+        if history and call_sid != "unknown":
+            print("📝 Generating summary and saving to DB...")
+            try:
+                loop = asyncio.get_event_loop()
+                summary = await loop.run_in_executor(None, summarize_call, history)
+                
+                # Twilio recording URL pattern if Record=True was used:
+                # https://api.twilio.com/2010-04-01/Accounts/[SID]/Calls/[call_sid]/Recordings
+                # For now, we leave recording_url empty or construct a likely URL
+                rec_url = f"https://api.twilio.com/2010-04-01/Accounts/{os.getenv('TWILIO_ACCOUNT_SID')}/Calls/{call_sid}/Recordings"
+                
+                await loop.run_in_executor(None, save_call_data, call_sid, history, summary, rec_url)
+                
+                # Start downloading the audio file in the background
+                asyncio.create_task(download_twilio_recording(call_sid))
+            except Exception as e:
+                print(f"❌ DB save error: {e}")
 
 
 def estimate_speak_time(text: str) -> float:

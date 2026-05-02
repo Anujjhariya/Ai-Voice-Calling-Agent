@@ -1,9 +1,9 @@
-# ── Environment & Secrets ──
+# Environment & Secrets
 .env
 credentials.json
 token.json
 
-# ── Python ──
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -11,15 +11,26 @@ __pycache__/
 venv/
 env/
 
-# ── IDE ──
+# IDE
 .vscode/
 .idea/
 
-# ── OS files ──
+# OS files
 Thumbs.db
 .DS_Store
 
-# ── Temp/test files ──
+# Temp/test files
 *.wav
 *.mp3
 test_output.*
+
+# Database files (contain private call data)
+voice_agent.db
+voice_agent.db-shm
+voice_agent.db-wal
+
+# Downloaded recordings folder
+recordings/
+
+# CSV exports
+calls_data.csv

@@ -35,7 +35,10 @@ CONVERSATION FLOW (FOLLOW THIS ORDER):
 
 MEETING BOOKING (only when user explicitly wants to schedule):
 If user wants to book a meeting, get their name and preferred date/time.
-Then say a friendly confirmation message AND append this EXACT tag at the end:
+IMPORTANT RULES FOR BOOKING:
+1. NEVER assume a name or time. If the user just says "do it" or "schedule it", you MUST ask for their name and preferred time first.
+2. Business hours are strictly 8:00 AM to 8:00 PM. Do not book meetings outside this window.
+Then say a friendly confirmation message, thank them for calling, say goodbye, AND append this EXACT tag at the end:
 BOOK_MEETING:[name]:[YYYY-MM-DD HH:MM]
 Only use this tag once when first booking.
 
@@ -44,16 +47,43 @@ Extra rules:
 - If you don't know something, say so honestly
 """
 
+from datetime import datetime
+from calendar_api import get_busy_slots
+
 def get_response(user_text: str, history: list) -> str:
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    now = datetime.now()
+    busy_slots = get_busy_slots()
+    
+    current_date_info = f"\n[IMPORTANT CONTEXT]\nToday's Date: {now.strftime('%A, %Y-%m-%d')}\nCurrent Time: {now.strftime('%I:%M %p')}\nUse THIS year ({now.year}) when scheduling meetings unless specified otherwise.\n\n[CALENDAR AVAILABILITY (BUSY SLOTS)]\n{busy_slots}\n\n*** CRITICAL RULE ***\nIf the user requests a time that is exactly in the busy list above, YOU MUST REFUSE TO BOOK IT. Never generate the BOOK_MEETING tag. Tell them the slot is unavailable and suggest another time, then STOP. DO NOT book the alternative time until the user explicitly agrees to it in the next turn."
+    
+    messages = [{"role": "system", "content": SYSTEM_PROMPT + current_date_info}]
     messages += history
     messages.append({"role": "user", "content": user_text})
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=messages,
-        max_tokens=120,
+        max_tokens=300,
         temperature=0.7,
+    )
+    return response.choices[0].message.content.strip()
+
+
+def summarize_call(history: list) -> str:
+    """Generate a short summary of the call history."""
+    if not history:
+        return "No conversation history."
+        
+    prompt = "Below is a transcript of a sales call. Summarize the customer's intent, interest level, and any agreed next steps in 2-3 sentences:\n\n"
+    for msg in history:
+        role = "Agent" if msg["role"] == "assistant" else "Customer"
+        prompt += f"{role}: {msg['content']}\n"
+        
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=150,
+        temperature=0.3,
     )
     return response.choices[0].message.content.strip()
 

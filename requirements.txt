@@ -2,10 +2,10 @@
 fastapi
 uvicorn[standard]
 
-# ── WebSocket (Murf TTS streaming) ──
+# ── WebSocket ──
 websockets
 
-# ── Twilio (outbound calls) ──
+# ── Twilio (outbound calls + WhatsApp) ──
 twilio
 
 # ── Groq (STT Whisper + LLM Llama) ──
@@ -23,6 +23,9 @@ imageio-ffmpeg
 # ── Environment variables ──
 python-dotenv
 
-# ── HTTP requests (outbound Exotel) ──
+# ── HTTP requests (Exotel + Twilio recording download) ──
 requests
 httpx
+
+# ── Database ──
+# sqlite3 is built into Python — no install needed
