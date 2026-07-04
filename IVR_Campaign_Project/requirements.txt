@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+requests
+python-dotenv
+python-multipart
+groq
+twilio
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+PyPDF2

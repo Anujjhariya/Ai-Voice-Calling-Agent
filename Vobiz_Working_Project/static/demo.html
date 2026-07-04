@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binjwa IT Solutions</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
+  nav { background: white; border-bottom: 1px solid #e2e8f0; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-weight: 700; font-size: 18px; color: #6c63ff; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { text-decoration: none; color: #64748b; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+  .nav-links a:hover { color: #6c63ff; }
+  .hero { max-width: 900px; margin: 80px auto; text-align: center; padding: 0 24px; }
+  .hero h1 { font-size: 48px; font-weight: 700; line-height: 1.2; color: #0f172a; margin-bottom: 20px; }
+  .hero h1 span { color: #6c63ff; }
+  .hero p { font-size: 18px; color: #64748b; line-height: 1.7; max-width: 600px; margin: 0 auto 36px; }
+  .hero-btns { display: flex; gap: 14px; justify-content: center; }
+  .btn-primary { background: #6c63ff; color: white; padding: 13px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; }
+  .btn-primary:hover { background: #5b52e8; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.35); }
+  .btn-outline { background: white; color: #6c63ff; padding: 13px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; border: 2px solid #6c63ff; cursor: pointer; transition: all 0.2s; }
+  .btn-outline:hover { background: #f5f3ff; }
+  .services { max-width: 1000px; margin: 60px auto; padding: 0 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .card { background: white; border-radius: 14px; padding: 28px; border: 1px solid #e2e8f0; transition: all 0.2s; }
+  .card:hover { border-color: #6c63ff; transform: translateY(-3px); box-shadow: 0 12px 32px rgba(108,99,255,0.1); }
+  .card-icon { font-size: 32px; margin-bottom: 14px; }
+  .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #0f172a; }
+  .card p { font-size: 13px; color: #64748b; line-height: 1.6; }
+  .card .price { font-size: 13px; font-weight: 600; color: #6c63ff; margin-top: 12px; }
+  .embed-note { max-width: 700px; margin: 0 auto 80px; padding: 24px; background: #f1f5f9; border-radius: 12px; text-align: center; }
+  .embed-note code { font-family: monospace; font-size: 12px; color: #6c63ff; background: #ede9fe; padding: 10px 16px; border-radius: 8px; display: block; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav>
+  <div class="logo">💼 Binjwa IT Solutions</div>
+  <div class="nav-links">
+    <a href="#">Home</a>
+    <a href="#">Services</a>
+    <a href="#">Portfolio</a>
+    <a href="#">Contact</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>We Build <span>Digital Solutions</span><br>That Drive Growth</h1>
+  <p>Websites, Mobile Apps, Digital Marketing — everything your business needs to succeed online. Talk to our AI assistant to get started!</p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="#">Get Started</a>
+    <a class="btn-outline" href="#">View Portfolio</a>
+  </div>
+</div>
+
+<!-- Services -->
+<div class="services">
+  <div class="card">
+    <div class="card-icon">🌐</div>
+    <h3>Website Development</h3>
+    <p>Professional, fast, and beautiful websites tailored for your business.</p>
+    <div class="price">Starting ₹8,000</div>
+  </div>
+  <div class="card">
+    <div class="card-icon">📱</div>
+    <h3>Mobile App Development</h3>
+    <p>Android & iOS apps built with the latest technologies.</p>
+    <div class="price">Starting ₹25,000</div>
+  </div>
+  <div class="card">
+    <div class="card-icon">📈</div>
+    <h3>Digital Marketing</h3>
+    <p>SEO, social media, Google Ads — grow your online presence.</p>
+    <div class="price">Starting ₹5,000/mo</div>
+  </div>
+  <div class="card">
+    <div class="card-icon">⚙️</div>
+    <h3>Software Development</h3>
+    <p>Custom software solutions for your business operations.</p>
+    <div class="price">Custom pricing</div>
+  </div>
+</div>
+
+<!-- Embed note -->
+<div class="embed-note">
+  <p style="font-size:14px;color:#64748b;">🤖 <strong>The AI Voice Widget</strong> is embedded on this page. Click the purple mic button at the bottom-right!</p>
+  <p style="font-size:12px;color:#94a3b8;margin-top:8px;">Add to your website with one line:</p>
+  <code>&lt;script src="https://your-ngrok-url/static/widget.js"&gt;&lt;/script&gt;</code>
+</div>
+
+<!-- ═══ EMBED THE WIDGET WITH ONE LINE ═══ -->
+<script src="/static/widget.js"></script>
+
+</body>
+</html>

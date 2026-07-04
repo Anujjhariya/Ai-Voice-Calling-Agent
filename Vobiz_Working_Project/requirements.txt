@@ -1,0 +1,38 @@
+# ── Web Framework & Server ──
+fastapi
+uvicorn[standard]
+
+# ── WebSocket ──
+websockets
+
+# ── Twilio (outbound calls + WhatsApp) ──
+twilio
+
+# ── Groq (STT Whisper + LLM Llama) ──
+groq
+
+# ── Google Calendar API ──
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+
+# ── TTS audio conversion ──
+imageio-ffmpeg
+gTTS
+
+# ── Environment variables ──
+python-dotenv
+
+# ── HTTP requests ──
+requests
+httpx
+
+# ── Database (MongoDB) ──
+pymongo
+
+# ── Form data parsing ──
+python-multipart
+
+# ── Audio processing (removed in Python 3.13+, this backport fixes it) ──
+audioop-lts;python_version>="3.13"

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IVR Simulator — Binjva IT Solutions</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0a0a12; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .container { display: grid; grid-template-columns: 380px 1fr; gap: 24px; max-width: 1100px; width: 100%; }
+    .phone { background: linear-gradient(145deg, #141420, #1a1a2e); border: 1px solid #2a2a45; border-radius: 28px; padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
+    .phone-header { text-align: center; }
+    .phone-header h1 { font-size: 16px; font-weight: 600; color: #a78bfa; letter-spacing: 0.5px; }
+    .phone-header p { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #4ade80; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; margin-top: 8px; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .config { display: flex; flex-direction: column; gap: 10px; }
+    .config label { font-size: 11px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .config input, .config select { background: #0d0d1a; border: 1px solid #2a2a45; color: #e2e8f0; padding: 10px 12px; border-radius: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; outline: none; transition: border-color 0.2s; width: 100%; }
+    .config input:focus, .config select:focus { border-color: #7c3aed; }
+    .call-btn { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+    .call-btn:hover { background: linear-gradient(135deg, #6d28d9, #4c1d95); transform: translateY(-1px); }
+    .call-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .keypad-section { display: none; }
+    .keypad-section.visible { display: block; }
+    .keypad-label { font-size: 11px; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; text-align: center; }
+    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .key { background: #1e1e35; border: 1px solid #2a2a45; color: #e2e8f0; border-radius: 10px; padding: 14px 8px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: center; }
+    .key:hover { background: #7c3aed; border-color: #7c3aed; transform: scale(1.05); }
+    .key:active { transform: scale(0.97); }
+    .hangup-btn { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; border: none; border-radius: 12px; padding: 12px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; transition: all 0.2s; }
+    .hangup-btn:hover { background: linear-gradient(135deg, #b91c1c, #7f1d1d); }
+    .log-panel { background: linear-gradient(145deg, #0d0d1a, #111122); border: 1px solid #1e1e35; border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.4); }
+    .log-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #1e1e35; }
+    .log-header h2 { font-size: 13px; font-weight: 600; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; }
+    .clear-btn { background: none; border: 1px solid #2a2a45; color: #64748b; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+    .clear-btn:hover { border-color: #7c3aed; color: #a78bfa; }
+    .log-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; min-height: 500px; max-height: 600px; }
+    .log-entry { background: #141420; border-radius: 10px; padding: 12px 14px; border-left: 3px solid transparent; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .log-entry.ivr { border-color: #7c3aed; }
+    .log-entry.user { border-color: #0ea5e9; }
+    .log-entry.error { border-color: #dc2626; background: #1a0a0a; }
+    .log-entry.info { border-color: #10b981; }
+    .log-entry.xml { border-color: #f59e0b; }
+    .log-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .log-tag { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; }
+    .log-tag.ivr { background: rgba(124,58,237,0.2); color: #a78bfa; }
+    .log-tag.user { background: rgba(14,165,233,0.2); color: #38bdf8; }
+    .log-tag.error { background: rgba(220,38,38,0.2); color: #f87171; }
+    .log-tag.info { background: rgba(16,185,129,0.2); color: #34d399; }
+    .log-tag.xml { background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .log-time { font-size: 10px; color: #475569; font-family: 'JetBrains Mono', monospace; }
+    .log-msg { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
+    .log-xml { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #94a3b8; background: #0a0a12; padding: 8px; border-radius: 6px; margin-top: 6px; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto; }
+    .empty-state { text-align: center; color: #334155; font-size: 13px; margin: auto; }
+    .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+    .tts-display { background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2); border-radius: 10px; padding: 12px; font-size: 13px; color: #c4b5fd; line-height: 1.6; display: none; }
+    .tts-display.visible { display: block; }
+    .speaking-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #a78bfa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .bar { width: 3px; height: 12px; background: #7c3aed; border-radius: 2px; animation: bar 0.8s ease-in-out infinite; }
+    .bar:nth-child(2) { animation-delay: 0.15s; }
+    .bar:nth-child(3) { animation-delay: 0.30s; }
+    @keyframes bar { 0%,100%{height:4px} 50%{height:14px} }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="phone">
+    <div class="phone-header">
+      <h1>📞 IVR Simulator</h1>
+      <p>Binjva IT Solutions — Test without spending balance</p>
+      <div class="status-badge"><span class="status-dot"></span> Local Test Mode</div>
+    </div>
+    <div class="config">
+      <label>Server Base URL</label>
+      <input type="text" id="baseUrl" value="http://localhost:8000" />
+      <label>Customer Name</label>
+      <input type="text" id="customerName" value="Vivek" />
+      <label>Browser TTS Language</label>
+      <select id="ttsLang">
+        <option value="hi-IN">Hindi (hi-IN)</option>
+        <option value="en-IN">English India (en-IN)</option>
+        <option value="en-US">English US (en-US)</option>
+      </select>
+    </div>
+    <button class="call-btn" id="startCallBtn" onclick="startCall()">📲 Simulate Incoming Call</button>
+    <div id="ttsDisplay" class="tts-display">
+      <div class="speaking-indicator"><div class="bar"></div><div class="bar"></div><div class="bar"></div> IVR Speaking</div>
+      <div id="ttsText"></div>
+    </div>
+    <div class="keypad-section" id="keypadSection">
+      <div class="keypad-label">Press a key to respond</div>
+      <div class="keypad">
+        <button class="key" onclick="pressKey('1')">1</button>
+        <button class="key" onclick="pressKey('2')">2</button>
+        <button class="key" onclick="pressKey('3')">3</button>
+        <button class="key" onclick="pressKey('4')">4</button>
+        <button class="key" onclick="pressKey('5')">5</button>
+        <button class="key" onclick="pressKey('6')">6</button>
+        <button class="key" onclick="pressKey('7')">7</button>
+        <button class="key" onclick="pressKey('8')">8</button>
+        <button class="key" onclick="pressKey('9')">9</button>
+        <button class="key" onclick="pressKey('*')">*</button>
+        <button class="key" onclick="pressKey('0')">0</button>
+        <button class="key" onclick="pressKey('#')">#</button>
+      </div>
+      <button class="hangup-btn" onclick="hangUp()">🔴 Hang Up</button>
+    </div>
+  </div>
+
+  <div class="log-panel">
+    <div class="log-header">
+      <h2>📋 Call Activity Log</h2>
+      <button class="clear-btn" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-body" id="logBody">
+      <div class="empty-state">
+        <div class="icon">📵</div>
+        <div>No call started yet.<br/>Click "Simulate Incoming Call" to begin.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentGatherAction = null;
+  let callUUID = `SIM-${Date.now()}`;
+  const synth = window.speechSynthesis;
+  let voices = [];
+
+  // Load browser voices (Chrome loads them async)
+  function loadVoices() {
+    voices = synth.getVoices();
+  }
+  synth.onvoiceschanged = loadVoices;
+  loadVoices();
+
+  function getBestVoice(lang) {
+    return voices.find(v => v.lang === lang)
+        || voices.find(v => v.lang.startsWith(lang.split('-')[0]))
+        || voices[0]
+        || null;
+  }
+
+  function speakText(text) {
+    return new Promise(resolve => {
+      if (!text || !synth) { resolve(); return; }
+      synth.cancel();
+      const lang = document.getElementById('ttsLang').value;
+      const utt = new SpeechSynthesisUtterance(text);
+      const voice = getBestVoice(lang);
+      if (voice) utt.voice = voice;
+      utt.lang = lang;
+      utt.rate = 0.92;
+      utt.pitch = 1.05;
+      utt.onend = resolve;
+      utt.onerror = resolve;
+      // Chrome bug: speech stops after ~15s; this keeps it alive
+      const keepAlive = setInterval(() => { if (!synth.speaking) clearInterval(keepAlive); }, 5000);
+      synth.speak(utt);
+    });
+  }
+
+  function ts() {
+    return new Date().toLocaleTimeString('en-IN', { hour12: false });
+  }
+
+  function addLog(type, message, xml = null) {
+    const logBody = document.getElementById('logBody');
+    const empty = logBody.querySelector('.empty-state');
+    if (empty) empty.remove();
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    const xmlBlock = xml ? `<div class="log-xml">${escHtml(prettyXml(xml))}</div>` : '';
+    entry.innerHTML = `
+      <div class="log-meta">
+        <span class="log-tag ${type}">${type.toUpperCase()}</span>
+        <span class="log-time">${ts()}</span>
+      </div>
+      <div class="log-msg">${message}</div>${xmlBlock}`;
+    logBody.appendChild(entry);
+    logBody.scrollTop = logBody.scrollHeight;
+  }
+
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function prettyXml(xml) {
+    try {
+      let out = '', indent = '';
+      xml.split(/>\s*</).forEach(node => {
+        if (node.match(/^\/\w/)) indent = indent.substring(2);
+        out += indent + '<' + node + '>\n';
+        if (node.match(/^<?\w[^\/]*[^\/]$/) && !node.startsWith('!')) indent += '  ';
+      });
+      return out.substring(1, out.length - 2);
+    } catch { return xml; }
+  }
+
+  function extractSay(xml) {
+    const m = xml.match(/<Say[^>]*>([^<]+)<\/Say>/g);
+    return m ? m.map(t => t.replace(/<[^>]+>/g,'')).join(' ') : '';
+  }
+
+  function extractGather(xml) {
+    const m = xml.match(/<Gather[^>]*action="([^"]+)"/);
+    return m ? m[1] : null;
+  }
+
+  function extractRedirect(xml) {
+    const m = xml.match(/<Redirect[^>]*>([^<]+)<\/Redirect>/);
+    return m ? m[1] : null;
+  }
+
+  function showKeypad(v) { document.getElementById('keypadSection').classList.toggle('visible', v); }
+
+  function showSpeaking(text) {
+    const d = document.getElementById('ttsDisplay');
+    document.getElementById('ttsText').textContent = text || '';
+    text ? d.classList.add('visible') : d.classList.remove('visible');
+  }
+
+  async function callEndpoint(url, params = {}) {
+    const localBase = document.getElementById('baseUrl').value.replace(/\/$/, '');
+    // Always rewrite external/ngrok URLs to hit localhost
+    let fullUrl = url.startsWith('http') ? url : localBase + url;
+    fullUrl = fullUrl.replace(/https?:\/\/[^\/]+(\.ngrok[^\/]*|\.loca\.lt|\.ngrok-free\.app)(:\d+)?/g, localBase);
+    fullUrl = fullUrl.replace(/https:\/\//g, 'http://').replace(/^http:\/\/[^\/]*\.(ngrok|trycloudflare)[^\/]*/g, localBase);
+
+    addLog('user', `→ <code>${decodeURIComponent(fullUrl.split('?')[0])}</code>`);
+    try {
+      const fd = new FormData();
+      fd.append('CallUUID', callUUID);
+      fd.append('Direction', 'outbound');
+      fd.append('CallStatus', 'in-progress');
+      fd.append('Event', 'StartApp');
+      for (const [k,v] of Object.entries(params)) fd.append(k, v);
+
+      const resp = await fetch(fullUrl, { method: 'POST', body: fd, mode: 'cors' });
+      const xml  = await resp.text();
+      addLog('xml', `← XML from server`, xml);
+
+      const sayText = extractSay(xml);
+      if (sayText) {
+        showSpeaking(sayText);
+        addLog('ivr', `🔊 <strong>IVR Says:</strong> "${sayText}"`);
+        await speakText(sayText);   // 🔊 SPEAKS OUT LOUD
+      }
+
+      if (xml.includes('<Hangup') || xml.includes('<hangup')) {
+        addLog('info', '📴 Call ended (IVR Hangup).');
+        showKeypad(false); showSpeaking('');
+        currentGatherAction = null;
+        document.getElementById('startCallBtn').disabled = false;
+        return;
+      }
+
+      const gatherAction = extractGather(xml);
+      if (gatherAction) {
+        currentGatherAction = gatherAction;
+        addLog('info', '⌨️ IVR is waiting for your key press...');
+        showKeypad(true);
+        return;
+      }
+
+      const redirect = extractRedirect(xml);
+      if (redirect) {
+        addLog('info', `↪️ Redirect → ${redirect.split('?')[0]}`);
+        await callEndpoint(redirect);
+      }
+    } catch(e) {
+      addLog('error', `❌ ${e.message}<br>Is your server running at <strong>${localBase}</strong>?`);
+      document.getElementById('startCallBtn').disabled = false;
+    }
+  }
+
+  async function startCall() {
+    // Unlock browser audio with a silent utterance (required by Chrome)
+    synth.cancel();
+    synth.speak(new SpeechSynthesisUtterance(''));
+    loadVoices();
+
+    callUUID = `SIM-${Date.now()}`;
+    clearLog();
+    showKeypad(false);
+    showSpeaking('');
+    document.getElementById('startCallBtn').disabled = true;
+
+    const name = document.getElementById('customerName').value || 'Customer';
+    const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
+    const lang = document.getElementById('ttsLang').value;
+    const voice = getBestVoice(lang);
+
+    addLog('info', `🚀 Simulated call started`);
+    addLog('info', `👤 Customer: <strong>${name}</strong>`);
+    addLog('info', `🎙️ TTS Voice: <strong>${voice ? voice.name : 'Default'}</strong> (${lang})`);
+
+    await callEndpoint(`${base}/ivr/welcome?name=${encodeURIComponent(name)}`, {
+      From: '911171366938',
+      To: '919999999999',
+      name: name
+    });
+  }
+
+  async function pressKey(digit) {
+    if (!currentGatherAction) { addLog('error', '❌ No active Gather. Click Simulate Incoming Call first.'); return; }
+    synth.cancel();
+    addLog('user', `👆 Pressed: <strong>${digit}</strong>`);
+    showSpeaking('');
+    const action = currentGatherAction;
+    currentGatherAction = null;
+    showKeypad(false);
+    await callEndpoint(action, { Digits: digit });
+  }
+
+  function hangUp() {
+    synth.cancel();
+    addLog('info', '📴 You hung up.');
+    showKeypad(false); showSpeaking('');
+    currentGatherAction = null;
+    document.getElementById('startCallBtn').disabled = false;
+  }
+
+  function clearLog() {
+    document.getElementById('logBody').innerHTML =
+      '<div class="empty-state"><div class="icon">📵</div><div>No call started yet.<br/>Click "Simulate Incoming Call" to begin.</div></div>';
+  }
+</script>
+</body>
+</html>
