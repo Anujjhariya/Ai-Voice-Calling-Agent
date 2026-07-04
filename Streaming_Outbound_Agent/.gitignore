@@ -1,0 +1,20 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Static files (generated audio)
+static/
+
+# Editor/OS specific
+.vscode/
+.idea/
+.DS_Store
