@@ -34,3 +34,18 @@ recordings/
 
 # CSV exports
 calls_data.csv
+# Zip backups
+*.zip
+
+# Miscellaneous sensitive/unclear files
+Name.pdf
+
+# Duplicate/backup code files
+*copy*.py
+main_copy.py
+
+# Broken venv (if not already deleted)
+.venv_broken_*/
+
+.env.docker
+*.env.*

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binjwa IT Solutions — AI Voice Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .container {
+            width: 420px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 28px;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 32px;
+        }
+
+        /* Call Button */
+        #callBtn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #00c853, #00e676);
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 30px rgba(0,200,83,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+
+        #callBtn:hover { transform: scale(1.08); }
+        #callBtn.active {
+            background: linear-gradient(135deg, #ff1744, #ff5252);
+            box-shadow: 0 8px 30px rgba(255,23,68,0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,23,68,0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(255,23,68,0); }
+        }
+
+        /* Status */
+        #status {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 24px;
+            min-height: 20px;
+        }
+        #status.listening { color: #00e676; }
+        #status.speaking { color: #448aff; }
+        #status.processing { color: #ffd740; }
+
+        /* Waveform */
+        .waveform {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 50px;
+            margin-bottom: 24px;
+        }
+
+        .waveform .bar {
+            width: 4px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+            border-radius: 4px;
+            height: 8px;
+            transition: height 0.1s ease;
+        }
+
+        .waveform.active .bar {
+            animation: wave 0.8s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { height: 8px; }
+            50% { height: 40px; }
+        }
+
+        .waveform.active .bar:nth-child(1) { animation-delay: 0.0s; }
+        .waveform.active .bar:nth-child(2) { animation-delay: 0.1s; }
+        .waveform.active .bar:nth-child(3) { animation-delay: 0.2s; }
+        .waveform.active .bar:nth-child(4) { animation-delay: 0.3s; }
+        .waveform.active .bar:nth-child(5) { animation-delay: 0.4s; }
+        .waveform.active .bar:nth-child(6) { animation-delay: 0.3s; }
+        .waveform.active .bar:nth-child(7) { animation-delay: 0.2s; }
+        .waveform.active .bar:nth-child(8) { animation-delay: 0.1s; }
+        .waveform.active .bar:nth-child(9) { animation-delay: 0.0s; }
+
+        /* Chat Log */
+        .chat-log {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .chat-log::-webkit-scrollbar { width: 4px; }
+        .chat-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        .chat-msg { margin-bottom: 8px; }
+        .chat-msg .label {
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .chat-msg.user .label { color: #00e676; }
+        .chat-msg.bot .label { color: #448aff; }
+        .chat-msg .text { color: rgba(255,255,255,0.8); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🤖</div>
+        <h1>Binjwa IT Solutions</h1>
+        <p class="subtitle">AI Voice Agent — Browser Call</p>
+
+        <div class="waveform" id="waveform">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+
+        <button id="callBtn" onclick="toggleCall()">📞</button>
+        <div id="status">Click to start a call</div>
+
+        <div class="chat-log" id="chatLog"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let mediaRecorder = null;
+        let audioContext = null;
+        let isCallActive = false;
+        let isListening = false;
+        let silenceTimer = null;
+        let audioStream = null;
+
+        const btn = document.getElementById('callBtn');
+        const status = document.getElementById('status');
+        const waveform = document.getElementById('waveform');
+        const chatLog = document.getElementById('chatLog');
+
+        function setStatus(text, cls = '') {
+            status.textContent = text;
+            status.className = cls;
+        }
+
+        function addChat(role, text) {
+            const div = document.createElement('div');
+            div.className = `chat-msg ${role}`;
+            div.innerHTML = `<span class="label">${role === 'user' ? '👤 You' : '🤖 Agent'}:</span> <span class="text">${text}</span>`;
+            chatLog.appendChild(div);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        async function toggleCall() {
+            if (isCallActive) {
+                endCall();
+            } else {
+                await startCall();
+            }
+        }
+
+        async function startCall() {
+            try {
+                // Get microphone access
+                audioStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        sampleRate: 16000, 
+                        channelCount: 1, 
+                        echoCancellation: true,
+                        noiseSuppression: true 
+                    } 
+                });
+
+                // Connect WebSocket
+                const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+                ws = new WebSocket(`${protocol}://${location.host}/ws/web`);
+                ws.binaryType = 'arraybuffer';
+
+                ws.onopen = () => {
+                    isCallActive = true;
+                    btn.classList.add('active');
+                    btn.textContent = '📵';
+                    setStatus('Connected — Agent is greeting...', 'speaking');
+                    waveform.classList.add('active');
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+
+                    if (data.type === 'greeting' || data.type === 'reply') {
+                        setStatus('🔊 Agent speaking...', 'speaking');
+                        waveform.classList.add('active');
+                        if (data.text) addChat('bot', data.text);
+                        
+                        // Play audio
+                        if (data.audio) {
+                            playAudio(data.audio).then(() => {
+                                // After audio finishes, start listening
+                                setStatus('🎙️ Listening — speak now...', 'listening');
+                                startRecording();
+                            });
+                        }
+                    } 
+                    else if (data.type === 'transcription') {
+                        if (data.text) addChat('user', data.text);
+                        setStatus('🤔 Processing...', 'processing');
+                        waveform.classList.remove('active');
+                    }
+                    else if (data.type === 'error') {
+                        setStatus('❌ ' + data.message);
+                    }
+                };
+
+                ws.onclose = () => {
+                    endCall();
+                };
+
+                ws.onerror = (err) => {
+                    console.error('WebSocket error:', err);
+                    setStatus('❌ Connection failed');
+                    endCall();
+                };
+
+            } catch (err) {
+                console.error('Mic access error:', err);
+                setStatus('❌ Microphone access denied');
+            }
+        }
+
+        function endCall() {
+            isCallActive = false;
+            isListening = false;
+            btn.classList.remove('active');
+            btn.textContent = '📞';
+            waveform.classList.remove('active');
+            setStatus('Call ended. Click to call again.');
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+            if (audioStream) {
+                audioStream.getTracks().forEach(t => t.stop());
+                audioStream = null;
+            }
+            if (silenceTimer) clearTimeout(silenceTimer);
+        }
+
+        function startRecording() {
+            if (!isCallActive || !audioStream) return;
+            isListening = true;
+
+            mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
+            const chunks = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                isListening = false;
+                if (chunks.length === 0 || !isCallActive) return;
+
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                
+                // Send audio to server
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        const base64 = btoa(String.fromCharCode(...new Uint8Array(reader.result)));
+                        ws.send(JSON.stringify({ type: 'audio', data: base64 }));
+                        setStatus('🤔 Processing your speech...', 'processing');
+                        waveform.classList.remove('active');
+                    }
+                };
+                reader.readAsArrayBuffer(blob);
+            };
+
+            // Record for up to 7 seconds, or detect silence
+            mediaRecorder.start(100); // collect in 100ms chunks
+
+            // Auto-stop after 7 seconds
+            silenceTimer = setTimeout(() => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+            }, 7000);
+
+            // Simple silence detection via AudioContext
+            detectSilence(audioStream);
+        }
+
+        function detectSilence(stream) {
+            if (!audioContext) audioContext = new AudioContext();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            source.connect(analyser);
+
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            let silentFrames = 0;
+            let speechDetected = false;
+
+            function check() {
+                if (!isListening) return;
+                analyser.getByteFrequencyData(data);
+                const avg = data.reduce((a, b) => a + b, 0) / data.length;
+
+                if (avg > 15) {
+                    speechDetected = true;
+                    silentFrames = 0;
+                } else if (speechDetected) {
+                    silentFrames++;
+                }
+
+                // Stop after ~1s of silence after speech
+                if (speechDetected && silentFrames > 25) {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        clearTimeout(silenceTimer);
+                        mediaRecorder.stop();
+                    }
+                    return;
+                }
+
+                requestAnimationFrame(check);
+            }
+            check();
+        }
+
+        async function playAudio(base64Audio) {
+            return new Promise((resolve) => {
+                const audioBytes = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0));
+                
+                if (!audioContext) audioContext = new AudioContext();
+                
+                audioContext.decodeAudioData(audioBytes.buffer.slice(0), (buffer) => {
+                    const source = audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(audioContext.destination);
+                    source.onended = resolve;
+                    source.start(0);
+                }, (err) => {
+                    console.error('Audio decode error:', err);
+                    resolve();
+                });
+            });
+        }
+    </script>
+</body>
+</html>

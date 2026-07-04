@@ -203,6 +203,8 @@ from lang_detect import detect_language
 from stt import transcribe_audio
 from tts import generate_pcm, generate_pcm_stream
 from calendar_api import book_meeting
+from ivr import ivr_router
+from whatsapp import send_aisensy_whatsapp_confirmation, get_customer_number_from_call
 import httpx
 
 async def download_twilio_recording(call_sid: str):
@@ -239,6 +241,9 @@ load_dotenv()
 app = FastAPI()
 call_history = {}
 
+# Register IVR routes
+app.include_router(ivr_router)
+
 RECORD_SECONDS    = 15
 CHUNK_MS          = 20
 CHUNKS_TO_COLLECT = int((RECORD_SECONDS * 1000) / CHUNK_MS)  # 750 chunks
@@ -274,8 +279,8 @@ from fastapi.responses import Response as FastAPIResponse
 @app.post("/twiml")
 async def twiml_answer():
     """
-    Twilio hits this HTTP endpoint first when a call comes in.
-    We tell Twilio: 'connect this call to our WebSocket server'
+    For OUTBOUND calls → connects directly to AI WebSocket.
+    For INBOUND calls  → use /ivr endpoint instead.
     """
     BASE_URL = os.getenv("BASE_URL", "")
     # Convert https:// to wss:// for WebSocket
@@ -416,6 +421,16 @@ async def voicebot_ws(websocket: WebSocket):
                                     loop = asyncio.get_event_loop()
                                     booking_status = await loop.run_in_executor(None, book_meeting, c_name, c_time)
                                     print(f"📅 Booking Attempt: {booking_status}")
+                                    
+                                    if "successfully booked" in booking_status:
+                                        # Send WhatsApp message in background
+                                        def send_wa():
+                                            c_num = get_customer_number_from_call(call_sid)
+                                            if c_num:
+                                                send_aisensy_whatsapp_confirmation(c_num, c_name, c_time)
+                                                
+                                        loop.run_in_executor(None, send_wa)
+                                        
                             except Exception as e:
                                 print(f"❌ Booking parsing error: {e}")
 

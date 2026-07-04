@@ -56,8 +56,18 @@ VOICE_MAP = {
         "locale": "hi-IN",
         "style": "Conversational",
     },
+    "hi_male": {
+        "voiceId": "Aarav",       # ✅ Native Indian male voice
+        "locale": "en-IN",        # Murf requires en-IN locale for Aarav
+        "style": "Conversational",
+    },
     "en": {
         "voiceId": "Anisha",      # ✅ Indian English female voice
+        "locale": "en-IN",
+        "style": "Conversational",
+    },
+    "en_male": {
+        "voiceId": "Ajay",        # ✅ Indian English male voice
         "locale": "en-IN",
         "style": "Conversational",
     },
@@ -136,6 +146,95 @@ async def generate_pcm(text: str, lang_code: str = "hi") -> bytes:
     print(f"✅ Audio ready: {len(ulaw)} bytes")
     return ulaw
 
+async def generate_wav(text: str, lang_code: str = "hi", gender: str = "female") -> bytes:
+    """
+    Generate premium TTS using Murf and return standard WAV bytes.
+    Used by the React web dashboard for online preview without phone calls.
+    """
+    if not MURF_API_KEY:
+        return b""
+
+    voice_key = lang_code if gender == "female" else f"{lang_code}_male"
+    voice = VOICE_MAP.get(voice_key, VOICE_MAP["hi"])
+    
+    ws_url = (
+        f"{MURF_WS_URL}?api-key={MURF_API_KEY}"
+        f"&model=FALCON&sample_rate=24000&channel_type=MONO&format=WAV"
+    )
+    audio_chunks = []
+
+    try:
+        async with websockets.connect(ws_url, ping_interval=20, ping_timeout=10, close_timeout=5) as ws:
+            await ws.send(json.dumps({
+                "voice_config": {
+                    "voiceId": voice["voiceId"], "locale": voice["locale"],
+                    "style": voice["style"], "rate": 0, "pitch": 0, "variation": 1
+                }
+            }))
+            await ws.send(json.dumps({"text": text, "end": True}))
+
+            while True:
+                try:
+                    msg = json.loads(await asyncio.wait_for(ws.recv(), timeout=15.0))
+                except (asyncio.TimeoutError, json.JSONDecodeError):
+                    break
+                if "audio" in msg:
+                    audio_chunks.append(base64.b64decode(msg["audio"]))
+                elif "error" in msg:
+                    print(f"❌ Murf Preview Error: {msg['error']}")
+                    return b""
+                if msg.get("final"):
+                    break
+    except Exception as e:
+        print(f"❌ Murf Preview exception: {e}")
+        return b""
+
+    if not audio_chunks:
+        return b""
+
+    return b"".join(audio_chunks)
+
+async def generate_wav_stream(text: str, lang_code: str = "hi", gender: str = "female"):
+    """
+    Stream premium TTS using Murf and yield standard WAV bytes.
+    Used by the React web dashboard for ZERO-LATENCY online previews!
+    """
+    if not MURF_API_KEY:
+        return
+
+    voice_key = lang_code if gender == "female" else f"{lang_code}_male"
+    voice = VOICE_MAP.get(voice_key, VOICE_MAP["hi"])
+    
+    ws_url = (
+        f"{MURF_WS_URL}?api-key={MURF_API_KEY}"
+        f"&model=FALCON&sample_rate=24000&channel_type=MONO&format=WAV"
+    )
+
+    try:
+        async with websockets.connect(ws_url, ping_interval=20, ping_timeout=10, close_timeout=5) as ws:
+            await ws.send(json.dumps({
+                "voice_config": {
+                    "voiceId": voice["voiceId"], "locale": voice["locale"],
+                    "style": voice["style"], "rate": 0, "pitch": 0, "variation": 1
+                }
+            }))
+            await ws.send(json.dumps({"text": text, "end": True}))
+
+            while True:
+                try:
+                    msg = json.loads(await asyncio.wait_for(ws.recv(), timeout=15.0))
+                except (asyncio.TimeoutError, json.JSONDecodeError):
+                    break
+                if "audio" in msg:
+                    yield base64.b64decode(msg["audio"])
+                elif "error" in msg:
+                    print(f"❌ Murf Stream Error: {msg['error']}")
+                    return
+                if msg.get("final"):
+                    break
+    except Exception as e:
+        print(f"❌ Murf Preview stream exception: {e}")
+
 
 # ─────────────────────────────────────────────────────────────
 # STREAMING FUNCTION: Yields ULAW chunks as they arrive from Murf
@@ -174,7 +273,7 @@ async def generate_pcm_stream(text: str, lang_code: str = "hi"):
 
             while True:
                 try:
-                    msg = json.loads(await asyncio.wait_for(ws.recv(), timeout=5.0))
+                    msg = json.loads(await asyncio.wait_for(ws.recv(), timeout=15.0))
                 except asyncio.TimeoutError:
                     print("⏱️ Murf stream timeout — ending")
                     break
@@ -235,7 +334,7 @@ if __name__ == "__main__":
         # Test 1: Hindi
         print("\n[Test 1] Hindi voice...")
         pcm = await generate_pcm(
-            "Namaste! Main Binjwa IT Solutions se bol raha hoon. Aapki kya madad kar sakta hoon?",
+            "Namaste! Main Binjva IT Solutions se bol rahi hoon. Aapki kya madad kar sakti hoon?",
             lang_code="hi"
         )
         if pcm:
@@ -246,7 +345,7 @@ if __name__ == "__main__":
         # Test 2: English
         print("\n[Test 2] English voice...")
         pcm = await generate_pcm(
-            "Hello! This is Binjwa IT Solutions. How can I help you today?",
+            "Hello! This is Binjva IT Solutions. How can I help you today?",
             lang_code="en"
         )
         if pcm:

@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  ivr-agent:
+    build: .
+    container_name: binjwa-ivr-agent
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - IVR_MONGO_URI=mongodb://mongo:27017
+    volumes:
+      # Mount credentials for Google Calendar (read-only)
+      - ./credentials.json:/app/credentials.json:ro
+      - ./token.json:/app/token.json
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    networks:
+      - ivr-network
+
+  mongo:
+    image: mongo:7
+    container_name: binjwa-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    networks:
+      - ivr-network
+
+volumes:
+  mongo-data:
+
+networks:
+  ivr-network:
+    driver: bridge
